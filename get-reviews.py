@@ -73,7 +73,8 @@ def print_review(url):
 def read_urls():
     with open('urls.txt') as file:
       for line in file:
-          yield line.strip()
+          if line[0] != '!':
+            yield line.strip()
     
 
 if __name__ == '__main__':
