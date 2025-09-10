@@ -28,10 +28,10 @@ if __name__ == '__main__':
         print('Wrong number of arguments')
         sys.exit(1)
 
-    starting_year = sys.argv[1]
-    ending_year = sys.argv[2]
+    starting_year = int(sys.argv[1])
+    ending_year = int(sys.argv[2])
     
-    for year in range(2024, 2026):
+    for year in range(starting_year, ending_year):
         for month in range(1, 13):
             for week in range(1, 6):
                 url = f'https://pitchfork.com/sitemap.xml?year={year}&month={month}&week={week}'
