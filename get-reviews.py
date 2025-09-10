@@ -4,6 +4,7 @@ import concurrent.futures
 import time
 import requests
 import json
+import html
 import sys
 
 def print_review(url):
@@ -24,7 +25,7 @@ def print_review(url):
   if end_index == -1:
       return None
   
-  title = res.text[start_index:end_index + 1] 
+  title = html.unescape(res.text[start_index:end_index + 1])
 
   # finding the description
   start_marker = r'<meta property="og:description" content="'
@@ -41,7 +42,9 @@ def print_review(url):
   if end_index == -1:
       return None
   
-  description = res.text[start_index:end_index + 1].replace("\n", "")
+  description = html.unescape(res.text[start_index:end_index + 1].replace("\n", ""))
+  
+
 
   # finding the rating 
   start_marker = 'window.__PRELOADED_STATE__ = '
