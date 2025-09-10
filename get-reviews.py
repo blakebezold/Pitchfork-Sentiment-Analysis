@@ -70,15 +70,19 @@ def print_review(url):
   return f'{title}|{score}|{description}|{url}'
   
 
-def read_urls():
-    with open('urls.txt') as file:
+def read_urls(path):
+    with open(path) as file:
       for line in file:
           if line[0] != '!':
             yield line.strip()
     
 
 if __name__ == '__main__':
-  urls = read_urls()
+  if len(sys.argv) != 2:
+     print(' Please enter a file containing the pitchfork review urls')
+     sys.exit(1)
+  
+  urls = read_urls(sys.argv[1])
 
   start_time = time.time()
 
