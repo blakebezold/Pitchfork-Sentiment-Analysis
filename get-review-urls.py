@@ -37,6 +37,6 @@ if __name__ == '__main__':
                 url = f'https://pitchfork.com/sitemap.xml?year={year}&month={month}&week={week}'
                 print(f'!{year} {month} {week}')
                 for page in find_locs(url):
-                    if 'https://pitchfork.com/reviews/' in page:
+                    if 'https://pitchfork.com/reviews/albums/' in page:
                         print(page)
         time.sleep(0.3)
