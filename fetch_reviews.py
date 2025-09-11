@@ -34,7 +34,7 @@ def fetch_review(url) -> dict[str, str]:
   output_dict['title'] = html.unescape(res.text[start_index:end_index + 1])
 
   # finding the description
-  start_marker = r'<meta property="og:description" content="'
+  start_marker = r'<meta name="description" content="'
   end_marker = r'"/>'
 
   start_index = res.text.find(start_marker)
@@ -80,12 +80,29 @@ def fetch_review(url) -> dict[str, str]:
 
   
 
-def read_urls(path):
-    ''' Reads a file to create a generator object that returns each url line by line '''
-    with open(path) as file:
-      for line in file:
-          if line[0] != '!':
-            yield line.strip()
+def read_urls(urls_path, skip_path=None):
+    ''' Reads a file to create a generator object that returns each url line by line, 
+    if an existing reviews path is included it will skip the reviews already fetched'''
+    existing_urls = set()
+    if skip_path:
+      with open(skip_path, mode='r', newline='', encoding='utf-8') as file:
+        csv_reader = csv.reader(file)
+        next(csv_reader)
+        for row in csv_reader:
+          if row:
+            existing_urls.add(row[3])
+    
+    print('URL Cache created, fetching reviews')
+    with open(urls_path) as file:
+      if skip_path:
+         for line in file:
+            line = line.strip()
+            if line[0] != '!' and line not in existing_urls:
+              yield line
+      else:
+        for line in file:
+            if line[0] != '!':
+              yield line.strip()
     
 
 if __name__ == '__main__':
@@ -93,13 +110,15 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description=description)
   parser.add_argument('-i', '--input', type=str, required=True, help='Input file')
   parser.add_argument('-o', '--output', type=str, default='reviews.csv', help='Output file')
+  parser.add_argument('-s', '--skip', type=str, help='File that contains existing reviews to skip fetching')
 
   args = parser.parse_args()
 
   input_file = args.input
   output_file = args.output
+  skip_file = args.skip
 
-  urls = read_urls(input_file)
+  urls = read_urls(input_file, skip_file)
 
   num_reviews = 0
   with open(output_file, 'w', newline='') as csvfile:
