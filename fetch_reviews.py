@@ -31,7 +31,7 @@ def fetch_review(url) -> dict[str, str]:
   if end_index == -1:
       return output_dict
   
-  output_dict['title'] = html.unescape(res.text[start_index:end_index + 1])
+  output_dict['title'] = html.unescape(res.text[start_index:end_index + 1]).strip('"')
 
   # finding the description
   start_marker = r'<meta name="description" content="'
@@ -48,7 +48,7 @@ def fetch_review(url) -> dict[str, str]:
   if end_index == -1:
       return output_dict
   
-  output_dict['description'] = html.unescape(res.text[start_index:end_index + 1].replace("\n", ""))
+  output_dict['description'] = html.unescape(res.text[start_index:end_index + 1].replace("\n", "")).strip('"')
   
   # finding the rating 
   start_marker = 'window.__PRELOADED_STATE__ = '
