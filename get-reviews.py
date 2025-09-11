@@ -6,8 +6,28 @@ import requests
 import json
 import html
 import sys
+import csv
+import io
 
-def print_review(url):
+def print_review(title, score, description, url):
+    """
+    Print the review as a CSV line to stdout with proper quoting.
+    """
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['title', 'score', 'description', 'url'], quoting=csv.QUOTE_MINIMAL)
+    writer.writerow({
+        'title': title,
+        'score': score,
+        'description': description,
+        'url': url
+    })
+
+    print(output.getvalue().strip())
+
+def fetch_review(url):
+  """
+  Request the url at the specified url and call the print review function
+  """
   res = requests.get(url)
 
   # finding the album title
@@ -70,7 +90,7 @@ def print_review(url):
               .get('musicRating', {}) \
               .get('score')
   
-  return f'{title}|{score}|{description}|{url}'
+  print_review_to_stdout(title, score, description, url)
   
 
 def read_urls(path):
