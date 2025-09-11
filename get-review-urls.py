@@ -46,7 +46,7 @@ def search(start, stop, destination):
 if __name__ == '__main__':
     description = 'searches Pitchfork index for album reviews from a specified period of time'
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('-s', '--start-year', type=int, help='Specify the stat year')
+    parser.add_argument('-s', '--start-year', type=int, required=True, help='Specify the stat year')
     parser.add_argument('-e', '--end-year', type=int, help='Specify the end year')
     parser.add_argument('-o', '--output', type=str, default='stdout', help='Output file (defaults to stdout)')
 
