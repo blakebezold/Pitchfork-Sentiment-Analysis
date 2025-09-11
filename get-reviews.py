@@ -6,8 +6,9 @@ import requests
 import json
 import html
 import sys
+import csv
 
-def print_review(url):
+def print_review(url) -> dict[str, str]:
   res = requests.get(url)
 
   # finding the album title
@@ -17,13 +18,13 @@ def print_review(url):
   start_index = res.text.find(start_marker)
 
   if start_index == -1:
-      return None
+      return {}
   
   start_index += len(start_marker)
   end_index = res.text.find(end_marker, start_index)
 
   if end_index == -1:
-      return None
+      return {}
   
   title = html.unescape(res.text[start_index:end_index + 1])
 
@@ -34,13 +35,13 @@ def print_review(url):
   start_index = res.text.find(start_marker)
 
   if start_index == -1:
-      return None
+      return {}
   
   start_index += len(start_marker)
   end_index = res.text.find(end_marker, start_index)
 
   if end_index == -1:
-      return None
+      return {}
   
   description = html.unescape(res.text[start_index:end_index + 1].replace("\n", ""))
   
@@ -53,13 +54,13 @@ def print_review(url):
   start_index = res.text.find(start_marker)
 
   if start_index == -1:
-      return None
+      return {}
   
   start_index += len(start_marker)
   end_index = res.text.find(end_marker, start_index)
 
   if end_index == -1:
-      return None
+      return {}
   
   json_text = res.text[start_index:end_index + 1] 
 
@@ -70,7 +71,8 @@ def print_review(url):
               .get('musicRating', {}) \
               .get('score')
   
-  return f'{title}|{score}|{description}|{url}'
+  return {'title':title, 'score':score, 'description':description, 'url':url}
+
   
 
 def read_urls(path):
@@ -81,18 +83,26 @@ def read_urls(path):
     
 
 if __name__ == '__main__':
-  if len(sys.argv) != 2:
-     print(' Please enter a file containing the pitchfork review urls')
+  if len(sys.argv) != 3:
+     print('Incorrect usage, need 3 args')
      sys.exit(1)
   
   urls = read_urls(sys.argv[1])
+  output_file = sys.argv[2]
 
-  start_time = time.time()
+  num_reviews = 0
+  with open(output_file, 'w', newline='') as csvfile:
+    fieldnames = ['title', 'score', 'description', 'url']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames, quoting=csv.QUOTE_MINIMAL)
+    writer.writeheader()
 
-  with concurrent.futures.ThreadPoolExecutor() as executor:
-      futures = [executor.submit(print_review, url) for url in urls]
-      for future in concurrent.futures.as_completed(futures):
-          print(future.result())
+    start_time = time.time()
 
-  end_time = time.time()
-  print(f"Requested reviews in {end_time - start_time:.2f} seconds")
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(print_review, url) for url in urls]
+        for future in concurrent.futures.as_completed(futures):
+            writer.writerow(future.result())
+            num_reviews += 1
+
+    end_time = time.time()
+  print(f"Requested {num_reviews} reviews in {end_time - start_time:.2f} seconds")
