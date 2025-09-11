@@ -9,19 +9,6 @@ import sys
 import csv
 import argparse
 
-def usage(exit_status: int=0) -> None:
-    ''' Print usage message and exit. '''
-    print('''Usage: get-reviews URLS OUTPUT-FILE
-
-          Scrapes the urls from the given file and outputs the album title, 
-          review score, description and original url to a specified csv file
-
-          URLS          Name of the file containing the desired URLS to scrape
-          OUTPUT-FILE   Name of the file to write to 
-          ''', 
-    file=sys.stderr)
-    sys.exit(exit_status)
-
 def fetch_review(url) -> dict[str, str]:
   ''' Scrapes the desired url and returns a dict containing the relevant information '''
   output_dict = {'url':url}
