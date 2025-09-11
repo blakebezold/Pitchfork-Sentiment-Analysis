@@ -91,8 +91,8 @@ def read_urls(path):
 if __name__ == '__main__':
   description = 'Searches the Pitchfork reviews and outputs their information'
   parser = argparse.ArgumentParser(description=description)
-  parser.add_argument('-i', '--input', type=str, help='Input file ')
-  parser.add_argument('-o', '--output', type=str, default='reviews.txt', help='Output file (defaults to stdout)')
+  parser.add_argument('-i', '--input', type=str, help='Input file')
+  parser.add_argument('-o', '--output', type=str, default='reviews.txt', help='Output file')
 
   args = parser.parse_args()
 
