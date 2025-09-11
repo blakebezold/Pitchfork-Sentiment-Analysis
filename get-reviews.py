@@ -90,7 +90,7 @@ def fetch_review(url):
               .get('musicRating', {}) \
               .get('score')
   
-  print_review_to_stdout(title, score, description, url)
+  print_review(title, score, description, url)
   
 
 def read_urls(path):
