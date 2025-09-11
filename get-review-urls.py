@@ -3,42 +3,60 @@
 import requests
 from bs4 import BeautifulSoup
 import sys
+import argparse
 
-def find_locs(url) -> list[str]:
-    sitemaps = []
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
+def find_reviews(url) -> list[str]:
+  ''' Searches the Pitchfork sitemap and returns all of the album reviews found within  '''
+  sitemaps = []
+  try:
+      res = requests.get(url)
+      res.raise_for_status()
 
-        soup = BeautifulSoup(response.content, 'xml')
+      soup = BeautifulSoup(res.content, 'xml')
 
-        for loc in soup.find_all('loc'):
-            sitemaps.append(loc.text)
-        return sitemaps
+      for loc in soup.find_all('loc'):
+        site = loc.text
+        if 'https://pitchfork.com/reviews/albums/' in site:
+            sitemaps.append(site)
+      
+      return sitemaps
+  
+
+  except requests.exceptions.RequestException as e:
+      print(f"Error fetching URL: {e}", file=sys.stdout)
+  return []
     
+def search(start, stop, destination):
+  ''' Calls the find_reviews function for the specified years and outputs to the specified file  '''
+  if destination == 'stdout':
+      output_stream = sys.stdout
+  else:
+      output_stream = open(destination, 'w')
 
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching URL: {e}", file=sys.stderr)
-    return []
+  num_reviews = 0
+  for year in range(start, stop):
+      for month in range(1, 13):
+          for week in range(1, 6):
+              url = f'https://pitchfork.com/sitemap.xml?year={year}&month={month}&week={week}'
+              print(f'!{year} {month} {week}', file=output_stream)
+              for page in find_reviews(url):
+                    print(page, file=output_stream)
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
-        print('Wrong number of arguments')
-        sys.exit(1)
+    description = 'searches Pitchfork index for album reviews from a specified period of time'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('-s', '--start-year', type=int, help='Specify the stat year')
+    parser.add_argument('-e', '--end-year', type=int, help='Specify the end year')
+    parser.add_argument('-o', '--output', type=str, default='stdout', help='Output file (defaults to stdout)')
 
-    starting_year = int(sys.argv[2])
-    ending_year = int(sys.argv[3])
+    args = parser.parse_args()
 
-    output_file = sys.argv[1]
+    starting_year = args.start_year
+    ending_year = args.end_year
+    output = args.output
 
-    num_reviews = 0
-    with open(output_file, 'w', newline='') as f:
-      for year in range(starting_year, ending_year):
-          for month in range(1, 13):
-              for week in range(1, 6):
-                  url = f'https://pitchfork.com/sitemap.xml?year={year}&month={month}&week={week}'
-                  f.write(f'!{year} {month} {week}')
-                  for page in find_locs(url):
-                      if 'https://pitchfork.com/reviews/' in page:
-                          f.write(page)
+    if ending_year is None:
+        ending_year = starting_year + 1
+
+    search(starting_year, ending_year, output)

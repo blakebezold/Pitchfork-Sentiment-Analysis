@@ -7,9 +7,27 @@ import json
 import html
 import sys
 import csv
+import argparse
 
-def print_review(url) -> dict[str, str]:
+def usage(exit_status: int=0) -> None:
+    ''' Print usage message and exit. '''
+    print('''Usage: get-reviews URLS OUTPUT-FILE
+
+          Scrapes the urls from the given file and outputs the album title, 
+          review score, description and original url to a specified csv file
+
+          URLS          Name of the file containing the desired URLS to scrape
+          OUTPUT-FILE   Name of the file to write to 
+          ''', 
+    file=sys.stderr)
+    sys.exit(exit_status)
+
+def fetch_review(url) -> dict[str, str]:
+  ''' Scrapes the desired url and returns a dict containing the relevant information '''
+  output_dict = {'url':url}
+
   res = requests.get(url)
+  res.raise_for_status()
 
   # finding the album title
   start_marker = r'<meta property="og:title" content="'
@@ -18,15 +36,15 @@ def print_review(url) -> dict[str, str]:
   start_index = res.text.find(start_marker)
 
   if start_index == -1:
-      return {}
+      return output_dict
   
   start_index += len(start_marker)
   end_index = res.text.find(end_marker, start_index)
 
   if end_index == -1:
-      return {}
+      return output_dict
   
-  title = html.unescape(res.text[start_index:end_index + 1])
+  output_dict['title'] = html.unescape(res.text[start_index:end_index + 1])
 
   # finding the description
   start_marker = r'<meta property="og:description" content="'
@@ -35,18 +53,16 @@ def print_review(url) -> dict[str, str]:
   start_index = res.text.find(start_marker)
 
   if start_index == -1:
-      return {}
+      return output_dict
   
   start_index += len(start_marker)
   end_index = res.text.find(end_marker, start_index)
 
   if end_index == -1:
-      return {}
+      return output_dict
   
-  description = html.unescape(res.text[start_index:end_index + 1].replace("\n", ""))
+  output_dict['description'] = html.unescape(res.text[start_index:end_index + 1].replace("\n", ""))
   
-
-
   # finding the rating 
   start_marker = 'window.__PRELOADED_STATE__ = '
   end_marker = '};'
@@ -54,13 +70,13 @@ def print_review(url) -> dict[str, str]:
   start_index = res.text.find(start_marker)
 
   if start_index == -1:
-      return {}
+      return output_dict
   
   start_index += len(start_marker)
   end_index = res.text.find(end_marker, start_index)
 
   if end_index == -1:
-      return {}
+      return output_dict
   
   json_text = res.text[start_index:end_index + 1] 
 
@@ -71,11 +87,14 @@ def print_review(url) -> dict[str, str]:
               .get('musicRating', {}) \
               .get('score')
   
-  return {'title':title, 'score':score, 'description':description, 'url':url}
+  output_dict['score'] = score
+  
+  return output_dict
 
   
 
 def read_urls(path):
+    ''' Reads a file to create a generator object that returns each url line by line '''
     with open(path) as file:
       for line in file:
           if line[0] != '!':
@@ -83,12 +102,17 @@ def read_urls(path):
     
 
 if __name__ == '__main__':
-  if len(sys.argv) != 3:
-     print('Incorrect usage, need 3 args')
-     sys.exit(1)
-  
-  urls = read_urls(sys.argv[1])
-  output_file = sys.argv[2]
+  description = 'Searches the Pitchfork reviews and outputs their information'
+  parser = argparse.ArgumentParser(description=description)
+  parser.add_argument('-i', '--input', type=str, help='Input file ')
+  parser.add_argument('-o', '--output', type=str, default='reviews.txt', help='Output file (defaults to stdout)')
+
+  args = parser.parse_args()
+
+  input_file = args.input
+  output_file = args.output
+
+  urls = read_urls(input_file)
 
   num_reviews = 0
   with open(output_file, 'w', newline='') as csvfile:
@@ -99,7 +123,7 @@ if __name__ == '__main__':
     start_time = time.time()
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(print_review, url) for url in urls]
+        futures = [executor.submit(fetch_review, url) for url in urls]
         for future in concurrent.futures.as_completed(futures):
             writer.writerow(future.result())
             num_reviews += 1
